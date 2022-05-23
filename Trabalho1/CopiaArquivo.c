@@ -51,4 +51,5 @@ int main()
 https://en.wikipedia.org/wiki/C_data_types
 https://www.cplusplus.com/reference/cstdio/fread/
 https://en.cppreference.com/w/c/io/fread
+https://www.youtube.com/watch?v=_eL3MD3zwXI&list=WL&index=31&t=160s
 */
