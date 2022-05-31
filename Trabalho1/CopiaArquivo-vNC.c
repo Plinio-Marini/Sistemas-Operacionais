@@ -1,5 +1,3 @@
-// versao sem plagio
-// falta tratamento de erro e talvez refatoracao?
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,11 +9,11 @@ int main(int argc, char* argv[]){
 	long tamanhoOrigem;
 	char* bufferDestino;
 
-	// resolver depois
-	//if(strcmp(argv[1], argv[2]) == 0){
-	//
-	//}
-	
+	if((argc < 3) && (argc > 3)){
+		printf("Numero de argumentos invalido!");
+		return 0;
+	}
+
 	// abre o arquivo de origem
 	arquivoOrigem = fopen(argv[1], "rb");
 	if (arquivoOrigem == NULL) {
