@@ -1,4 +1,5 @@
 // versao sem plagio
+// falta tratamento de erro e talvez refatoracao?
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]){
 	tamanhoOrigem = ftell(arquivoOrigem); // pega a posicao atual do ponteiro
 	rewind(arquivoOrigem); // retorna pro comeco do arquivo
 
-	// aloca memoria pro arquivo de origem
+	// aloca memoria pro conteudo do arquivo de origem
 	bufferDestino = malloc(sizeof(char) * tamanhoOrigem);
 	if(bufferDestino == NULL){
 		fclose(arquivoOrigem);
