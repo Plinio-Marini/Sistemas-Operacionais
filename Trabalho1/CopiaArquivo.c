@@ -1,54 +1,57 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> // ???
-#include <fcntl.h> // ??
+#include <string.h>
 
-int main()
-{
-	// USAR ARGV
+int main(int argc, char* argv[]){	
+	FILE* arquivoOrigem;
+	FILE* arquivoDestino;
 
-	char ch, arq_raiz[25], arq_destino[25];
-	FILE *raiz, *destino; 
+	long tamanhoOrigem;
+	char* bufferDestino;
 
-	printf("Entre com o nome do arquivo a ser copiado!\n");
-	scanf("%s", arq_raiz); 
-
-	// USAR ARGV
-
-	raiz = fopen(arq_raiz,"r"); 
-
-	if(raiz == NULL)
-	{
-		printf("\nO arquivo está vazio! Aperte qualquer tecla para sair do programa."); 
-		exit(EXIT_FAILURE); // RETURN 
+	if(argc != 3){
+		printf("Numero de argumentos invalido!");
+		return 0;
 	}
 
-	printf("Entre com o nome do arquivo clone!\n");
-	scanf("%s", arq_destino); 
-
-	destino = fopen(arq_destino, "w");
-
-	if(arq_raiz == NULL)
-	{
-		fclose(raiz);
-		printf("\nO arquivo está vazio! Aperte qualquer tecla para sair do programa."); 
-		exit(EXIT_FAILURE); // RETURN 
+	// abre o arquivo de origem
+	arquivoOrigem = fopen(argv[1], "rb");
+	if (arquivoOrigem == NULL) {
+		return -1;
 	}
 
-	// USAR LEITURA BINARIA? copiar mais bytes de uma vez usando int/long e diminuir o numero de iteracoes
-	while(( ch = fgetc(raiz)) != EOF )
-	{
-		fputc(ch, destino);
+	// escreve o arquivo de destino
+	arquivoDestino = fopen(argv[2], "wb");
+	if (arquivoDestino == NULL){
+		fclose(arquivoOrigem);
+		return -1; 
 	}
 
-	fclose(raiz);
-	fclose(destino);
+	// pega o tamanho do arquivo
+	fseek (arquivoOrigem, 0, SEEK_END); // vai pro fim do arquivo
+	tamanhoOrigem = ftell(arquivoOrigem); // pega a posicao atual do ponteiro
+	rewind(arquivoOrigem); // retorna pro comeco do arquivo
+
+	// aloca memoria pro conteudo do arquivo de origem
+	bufferDestino = malloc(sizeof(char) * tamanhoOrigem);
+	if(bufferDestino == NULL){
+		fclose(arquivoOrigem);
+		fclose(arquivoDestino);
+		return -1;
+	}
+	
+	// copia o conteudo do arquivo pro buffer
+	if(fread(bufferDestino, sizeof(char), tamanhoOrigem, arquivoOrigem) != tamanhoOrigem){
+		return -1; // erro no numero de elementos lidos
+	}
+
+	// joga o conteudo do buffer para o arquivo de destino
+	fwrite(bufferDestino, sizeof(char), tamanhoOrigem, arquivoDestino);
+	
+	// libera a memoria e os arquivos
+	free(bufferDestino);
+	fclose(arquivoDestino);
+	fclose(arquivoOrigem);
 
 	return 0;
 }
-
-/* REF
-https://en.wikipedia.org/wiki/C_data_types
-https://www.cplusplus.com/reference/cstdio/fread/
-https://en.cppreference.com/w/c/io/fread
-*/

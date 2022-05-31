@@ -1,104 +1,90 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
+#include "shell.h"
 
-#define	MAX_SIZE_CMD	256
-#define	MAX_SIZE_ARG	16
+pid_t pid;
 
-char cmd[MAX_SIZE_CMD];				// string holder for the command
-char *argv[MAX_SIZE_ARG];			// an array for command and arguments
-pid_t pid;										// global variable for the child process ID
-char i;												// global for loop counter
+char* userName;
+char* hostName;
 
-void get_cmd();								// get command string from the user
-void convert_cmd();						// convert the command string to the required format by execvp()
-void c_shell();								// to start the shell
-void log_handle(int sig);			// signal handler to add log statements
+char comando[CMD_CHAR_MAX];
+char* comandoVars[MAX_ARGS];
 
-int main(){
-	// tie the handler to the SGNCHLD signal
-	signal(SIGCHLD, log_handle);
-
-	// start the shell
-	c_shell();
-
-	return 0;
+void pega_vars(){
+    userName = getenv("USER");
+    hostName = getenv("HOSTNAME");
 }
 
-void c_shell(){
-	while(1){
-		// get the command from user
-		get_cmd();
-
-		// bypass empty commands
-		if(!strcmp("", cmd)) continue;
-
-		// check for "exit" command
-                if(!strcmp("exit", cmd)) break;
-
-		// fit the command into *argv[]
-		convert_cmd();
-
-		// fork and execute the command
-		pid = fork();
-		if(-1 == pid){
-			printf("failed to create a child\n");
-		}
-		else if(0 == pid){
-			// printf("hello from child\n");
-			// execute a command
-			execvp(argv[0], argv);
-		}
-		else{
-			// printf("hello from parent\n");
-			// wait for the command to finish if "&" is not present
-			if(NULL == argv[i]) waitpid(pid, NULL, 0);
-		}
-	}
+void cmd(){
+    printf("\n%s @ %s >> ", userName, hostName); // printa o prompt
+    fgets(comando, CMD_CHAR_MAX, stdin); // captura o comando
+    // remove o \n deixado pelo fgets
+    if(comando[strlen(comando) - 1] == '\n') comando[strlen(comando) - 1] = '\0';
 }
 
-void get_cmd(){
-	// get command from user
-	printf("Shell>\t");
-	fgets(cmd, MAX_SIZE_CMD, stdin);
-	// remove trailing newline
-	if ((strlen(cmd) > 0) && (cmd[strlen (cmd) - 1] == '\n'))
-        	cmd[strlen (cmd) - 1] = '\0';
-	//printf("%s\n", cmd);
+int shell(){
+    int flag; // flag de selecao do comando
+
+    while(1){
+        cmd();
+        splita();
+        flag = read_arg();
+
+        if(flag == EXIT){
+            return 0;
+        }
+        // forkeia pra executar o comando
+        pid = fork();
+        if(pid == -1){
+            fprintf(stderr, "Falha no fork");
+            return -1;
+        }else if(pid == 0){
+            if((flag >= 0) && (flag <= 9)){
+                execvp(comandoVars[0], comandoVars);
+            }else{
+                printf("comando invalido (\">> exit\" para fechar o shell)");
+            }
+            exit(1); // fecha o processo
+        }else{
+            // esperar a execucao do pid
+            wait(NULL);
+        }
+    }
 }
 
-void convert_cmd(){
-	// split string into argv
-	char *ptr;
-	i = 0;
-	ptr = strtok(cmd, " ");
-	while(ptr != NULL){
-		//printf("%s\n", ptr);
-		argv[i] = ptr;
-		i++;
-		ptr = strtok(NULL, " ");
-	}
 
-	// check for "&"
-	if(!strcmp("&", argv[i-1])){
-	argv[i-1] = NULL;
-	argv[i] = "&";
-	}else{
-	argv[i] = NULL;
-	}
-	//printf("%d\n", i);
+void splita(){
+    int i = 0;
+    char* aux = NULL;
+    aux = strtok(comando, " "); // splita os argumentos separados por espaco
+
+    while(aux != NULL){
+        comandoVars[i] = aux;
+        aux = strtok(NULL, " "); // continua splitando
+        i++;
+    }
 }
 
-void log_handle(int sig){
-	//printf("[LOG] child proccess terminated.\n");
-	FILE *pFile;
-        pFile = fopen("log.txt", "a");
-        if(pFile==NULL) perror("Error opening file.");
-        else fprintf(pFile, "[LOG] child proccess terminated.\n");
-        fclose(pFile);
+// PRECISA SER EXECUTADO SO DEPOIS DO SPLIT
+int read_arg(){ 
+    char* validos[] = {"ps\0", "pwd\0", "cd\0", "top\0", "cp\0", "mv\0", "mkdir\0", "rmdir\0", "who\0", "cat\0"}; //lista de comandos validos (DEVEM ESTAR NA ORDEM DOS INDICES DEFINIDOS NO .h)
+    int flag = -1;
+    int idc = 0;
+    
+    if(!(strcmp(comandoVars[0], "exit\0"))){
+        return EXIT;
+    }
+    while((idc < 10) && (flag == -1)){
+        if(!(strcmp(comandoVars[0], validos[idc]))){
+            flag = idc;
+        }
+        idc++;
+    }
+    return flag;
+}
+
+int main(void){
+    return shell();
 }
