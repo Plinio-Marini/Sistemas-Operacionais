@@ -9,7 +9,7 @@ int main(int argc, char* argv[]){
 	long tamanhoOrigem;
 	char* bufferDestino;
 
-	if((argc < 3) && (argc > 3)){
+	if(argc != 3){
 		printf("Numero de argumentos invalido!");
 		return 0;
 	}
