@@ -41,7 +41,7 @@ int shell(){
             fprintf(stderr, "Falha no fork");
             return -1;
         }else if(pid == 0){
-            if(flag >= 0 && flag <= 9){
+            if((flag >= 0) && (flag <= 9)){
                 execvp(comandoVars[0], comandoVars);
             }else{
                 printf("comando invalido (\">> exit\" para fechar o shell)");
